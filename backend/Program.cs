@@ -1,5 +1,6 @@
 using VideoStore.Backend.Data;
 using VideoStore.Backend.Repositories;
+using VideoStore.Backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<VideoContext>(options =>
 
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IVideoService, VideoService>();
 
 builder.Services.AddCors(options =>
 {

@@ -1,0 +1,10 @@
+using VideoStore.Backend.DTOs;
+
+namespace VideoStore.Backend.Services
+{
+    public interface IVideoService
+    {
+        Task<IEnumerable<VideoDTO>> GetAllVideosAsync();
+        Task<VideoDTO?> GetVideoByIdAsync(int id);
+    }
+}
