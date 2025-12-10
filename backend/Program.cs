@@ -1,4 +1,5 @@
 using VideoStore.Backend.Data;
+using VideoStore.Backend.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<VideoContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 
 builder.Services.AddCors(options =>
 {
