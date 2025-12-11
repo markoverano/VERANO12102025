@@ -18,14 +18,28 @@
     <div class="form-group">
       <label>Categories</label>
       <div class="categories">
-        <label *ngFor="let cat of categories" class="category-item">
+        <div class="new-category-input">
           <input
-            type="checkbox"
-            [checked]="selectedCategoryIds.includes(cat.id)"
-            (change)="toggleCategory(cat.id)">
-          {{ cat.name }}
-        </label>
-        <span *ngIf="categories.length === 0">No categories available</span>
+            type="text"
+            [(ngModel)]="newCategoryName"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Add new category"
+            [disabled]="isAddingCategory"
+            (keydown.enter)="addNewCategory(); $event.preventDefault()">
+          <button type="button" (click)="addNewCategory()" [disabled]="!newCategoryName.trim() || isAddingCategory">
+            {{ isAddingCategory ? 'Adding...' : 'Add' }}
+          </button>
+        </div>
+        <div class="category-list">
+          <label *ngFor="let cat of categories" class="category-item">
+            <input
+              type="checkbox"
+              [checked]="selectedCategoryIds.includes(cat.id)"
+              (change)="toggleCategory(cat.id)">
+            {{ cat.name }}
+          </label>
+          <span *ngIf="categories.length === 0" class="no-categories">No categories available</span>
+        </div>
       </div>
     </div>
 

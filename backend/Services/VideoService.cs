@@ -75,7 +75,7 @@ namespace VideoStore.Backend.Services
 
             var createdVideo = await _videoRepository.CreateAsync(video);
 
-            var categories = await GetOrCreateCategoriesAsync(uploadDTO.CategoryIds, uploadDTO.NewCategories);
+            var categories = await GetCategoriesByIdsAsync(uploadDTO.CategoryIds);
 
             foreach (var category in categories)
             {
@@ -114,26 +114,15 @@ namespace VideoStore.Backend.Services
             }
         }
 
-        private async Task<List<Category>> GetOrCreateCategoriesAsync(List<int> categoryIds, List<string> newCategoryNames)
+        private async Task<List<Category>> GetCategoriesByIdsAsync(List<int> categoryIds)
         {
-            var categories = new List<Category>();
-
-            if (categoryIds.Any())
+            if (!categoryIds.Any())
             {
-                var existingCategories = await _categoryRepository.GetCategoriesByIdsAsync(categoryIds);
-                categories.AddRange(existingCategories);
+                return new List<Category>();
             }
 
-            foreach (var categoryName in newCategoryNames.Where(n => !string.IsNullOrWhiteSpace(n)))
-            {
-                var category = await _categoryRepository.GetOrCreateAsync(categoryName);
-                if (!categories.Any(c => c.Id == category.Id))
-                {
-                    categories.Add(category);
-                }
-            }
-
-            return categories;
+            var categories = await _categoryRepository.GetCategoriesByIdsAsync(categoryIds);
+            return categories.ToList();
         }
 
         private static string SanitizeFileName(string fileName)

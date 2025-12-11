@@ -44,11 +44,40 @@ textarea {
 
 .categories {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.75rem;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.new-category-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.new-category-input input {
+  flex: 1;
+}
+
+.new-category-input button {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.new-category-input button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .category-item {
@@ -56,6 +85,11 @@ textarea {
   align-items: center;
   gap: 0.25rem;
   font-weight: normal;
+}
+
+.no-categories {
+  color: #666;
+  font-style: italic;
 }
 
 .file-error {

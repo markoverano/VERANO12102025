@@ -18,7 +18,9 @@ export class Upload implements OnInit, OnDestroy {
   uploadForm!: FormGroup;
   categories: Category[] = [];
   selectedCategoryIds: number[] = [];
+  newCategoryName = '';
   isUploading = false;
+  isAddingCategory = false;
   uploadProgress = 0;
   errorMessage = '';
   successMessage = '';
@@ -85,6 +87,39 @@ export class Upload implements OnInit, OnDestroy {
     } else {
       this.selectedCategoryIds.splice(idx, 1);
     }
+  }
+
+  addNewCategory(): void {
+    const trimmedName = this.newCategoryName.trim();
+    if (!trimmedName) return;
+
+    const normalizedNewName = trimmedName.toLowerCase();
+    const existsInLoaded = this.categories.some(
+      cat => cat.name.toLowerCase() === normalizedNewName
+    );
+
+    if (existsInLoaded) {
+      this.errorMessage = `Category "${trimmedName}" already exists`;
+      setTimeout(() => this.errorMessage = '', 3000);
+      this.newCategoryName = '';
+      return;
+    }
+
+    this.isAddingCategory = true;
+    this.categoryService.createCategory(trimmedName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (createdCategory) => {
+          this.categories.push(createdCategory);
+          this.newCategoryName = '';
+          this.isAddingCategory = false;
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Failed to add category';
+          setTimeout(() => this.errorMessage = '', 3000);
+          this.isAddingCategory = false;
+        }
+      });
   }
 
   onSubmit(): void {

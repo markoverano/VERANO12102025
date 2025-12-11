@@ -12,7 +12,5 @@ namespace VideoStore.Backend.DTOs
         public string Description { get; set; } = string.Empty;
 
         public List<int> CategoryIds { get; set; } = new List<int>();
-
-        public List<string> NewCategories { get; set; } = new List<string>();
     }
 }
