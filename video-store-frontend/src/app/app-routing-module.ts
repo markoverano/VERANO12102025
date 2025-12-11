@@ -1,14 +1,20 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { Home } from './components/home/home';
-import { Upload } from './components/upload/upload';
-import { Streaming } from './components/streaming/streaming';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
-  { path: 'home', component: Home },
-  { path: 'upload', component: Upload },
-  { path: 'streaming/:id', component: Streaming },
+  {
+    path: 'home',
+    loadChildren: () => import('./components/home/home.module').then(m => m.HomeModule)
+  },
+  {
+    path: 'upload',
+    loadChildren: () => import('./components/upload/upload.module').then(m => m.UploadModule)
+  },
+  {
+    path: 'streaming/:id',
+    loadChildren: () => import('./components/streaming/streaming.module').then(m => m.StreamingModule)
+  },
   { path: '**', redirectTo: '/home' }
 ];
 
