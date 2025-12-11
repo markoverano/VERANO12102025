@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http;
 using VideoStore.Backend.DTOs;
 using VideoStore.Backend.Models;
 using VideoStore.Backend.Repositories;
@@ -7,10 +9,20 @@ namespace VideoStore.Backend.Services
     public class VideoService : IVideoService
     {
         private readonly IVideoRepository _videoRepository;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<VideoService> _logger;
 
-        public VideoService(IVideoRepository videoRepository)
+        public VideoService(
+            IVideoRepository videoRepository,
+            ICategoryRepository categoryRepository,
+            IConfiguration configuration,
+            ILogger<VideoService> logger)
         {
             _videoRepository = videoRepository;
+            _categoryRepository = categoryRepository;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<VideoDTO>> GetAllVideosAsync()
@@ -23,6 +35,107 @@ namespace VideoStore.Backend.Services
         {
             var video = await _videoRepository.GetByIdWithCategoriesAsync(id);
             return video != null ? MapToDTO(video) : null;
+        }
+
+        public async Task<VideoUploadResponseDTO> UploadVideoAsync(VideoUploadDTO uploadDTO, IFormFile videoFile)
+        {
+            var uploadPath = _configuration.GetValue<string>("FileUpload:UploadPath") ?? "uploads/videos";
+            var fullUploadPath = Path.Combine(Directory.GetCurrentDirectory(), uploadPath);
+
+            if (!Directory.Exists(fullUploadPath))
+            {
+                Directory.CreateDirectory(fullUploadPath);
+            }
+
+            var sanitizedFileName = SanitizeFileName(videoFile.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}_{sanitizedFileName}";
+            var filePath = Path.Combine(fullUploadPath, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await videoFile.CopyToAsync(stream);
+            }
+
+            _logger.LogInformation("Video file saved: {FilePath}", filePath);
+
+            var video = new Video
+            {
+                Title = uploadDTO.Title,
+                Description = uploadDTO.Description,
+                FilePath = Path.Combine(uploadPath, uniqueFileName),
+                ThumbnailPath = string.Empty,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            var createdVideo = await _videoRepository.CreateAsync(video);
+
+            var categories = await GetOrCreateCategoriesAsync(uploadDTO.CategoryIds, uploadDTO.NewCategories);
+
+            foreach (var category in categories)
+            {
+                createdVideo.VideoCategories.Add(new VideoCategory
+                {
+                    VideoId = createdVideo.Id,
+                    CategoryId = category.Id
+                });
+            }
+
+            await _videoRepository.UpdateAsync(createdVideo);
+
+            _logger.LogInformation("Video record created with ID: {VideoId}", createdVideo.Id);
+
+            return new VideoUploadResponseDTO
+            {
+                Id = createdVideo.Id,
+                Title = createdVideo.Title,
+                Message = "Video uploaded successfully",
+                ThumbnailUrl = createdVideo.ThumbnailPath
+            };
+        }
+
+        private async Task<List<Category>> GetOrCreateCategoriesAsync(List<int> categoryIds, List<string> newCategoryNames)
+        {
+            var categories = new List<Category>();
+
+            if (categoryIds.Any())
+            {
+                var existingCategories = await _categoryRepository.GetCategoriesByIdsAsync(categoryIds);
+                categories.AddRange(existingCategories);
+            }
+
+            foreach (var categoryName in newCategoryNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+            {
+                var category = await _categoryRepository.GetOrCreateAsync(categoryName);
+                if (!categories.Any(c => c.Id == category.Id))
+                {
+                    categories.Add(category);
+                }
+            }
+
+            return categories;
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var sanitized = new string(fileName.Where(c => !invalidChars.Contains(c)).ToArray());
+            sanitized = Regex.Replace(sanitized, @"\s+", "_");
+            sanitized = Regex.Replace(sanitized, @"[^\w\.\-]", "");
+
+            if (string.IsNullOrWhiteSpace(sanitized))
+            {
+                sanitized = "video";
+            }
+
+            var extension = Path.GetExtension(sanitized);
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(sanitized);
+
+            if (nameWithoutExtension.Length > 100)
+            {
+                nameWithoutExtension = nameWithoutExtension.Substring(0, 100);
+            }
+
+            return nameWithoutExtension + extension;
         }
 
         private static VideoDTO MapToDTO(Video video)

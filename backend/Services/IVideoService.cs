@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using VideoStore.Backend.DTOs;
 
 namespace VideoStore.Backend.Services
@@ -6,5 +7,6 @@ namespace VideoStore.Backend.Services
     {
         Task<IEnumerable<VideoDTO>> GetAllVideosAsync();
         Task<VideoDTO?> GetVideoByIdAsync(int id);
+        Task<VideoUploadResponseDTO> UploadVideoAsync(VideoUploadDTO uploadDTO, IFormFile videoFile);
     }
 }
